@@ -20,8 +20,8 @@ etc.) over stdin/stdout — no network listener.
 ## Coordinates
 
 All positions are integer `(x, y)` screen pixels in Laz's coordinate space (see platform notes
-in the [Laz README](../laz/README.md) — DPI-awareness matters on Windows, and Wayland/XWayland
-HiDPI setups can behave unexpectedly on Linux). The server does not know the screen resolution
+in the [Laz README](https://github.com/tinfoil-herald/laz#readme) — DPI-awareness matters on
+Windows, and Wayland/XWayland HiDPI setups can behave unexpectedly on Linux). The server does not know the screen resolution
 (Laz exposes no such API) — the client must supply valid coordinates/regions itself, e.g. by
 first calling `screen_capture` over a guessed region and adjusting, or by asking the user.
 
