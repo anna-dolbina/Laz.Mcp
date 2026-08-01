@@ -1,0 +1,37 @@
+name: Build NuGet package
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      # dotnet pack drives the publish step for every RuntimeIdentifier itself
+      # (needed here since the project is a self-contained, multi-RID dotnet tool) -
+      # a separate `dotnet build` first isn't sufficient input for it.
+      - name: Pack
+        run: dotnet pack --configuration Release --no-restore --output ./artifacts
+
+      - name: Upload NuGet package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: ./artifacts/*.nupkg
+          if-no-files-found: error
