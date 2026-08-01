@@ -85,7 +85,7 @@ tools — see the Laz README's per-platform remarks for each method.
 
 ## Implementation notes (for the build)
 
-- .NET 8, `ModelContextProtocol` + `Microsoft.Extensions.Hosting` for the stdio server host.
+- .NET 10, `ModelContextProtocol` + `Microsoft.Extensions.Hosting` for the stdio server host.
 - A single `Laz.Lazbot` instance is held for the process lifetime and all calls into it are
   serialized behind one lock, since it manipulates global OS input/cursor state and two tool
   calls interleaving mid-gesture (e.g. a click landing in the middle of a drag) would be a real
