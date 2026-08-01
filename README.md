@@ -41,9 +41,8 @@ etc.) over stdin/stdout — no network listener.
 
 All positions are integer `(x, y)` screen pixels in Laz's coordinate space (see platform notes
 in the [Laz README](https://github.com/tinfoil-herald/laz#readme) — DPI-awareness matters on
-Windows, and Wayland/XWayland HiDPI setups can behave unexpectedly on Linux). The server does not know the screen resolution
-(Laz exposes no such API) — the client must supply valid coordinates/regions itself, e.g. by
-first calling `screen_capture` over a guessed region and adjusting, or by asking the user.
+Windows, and Wayland/XWayland HiDPI setups can behave unexpectedly on Linux). Call `screen_get_size`
+or `screen_list_displays` first to get valid bounds instead of guessing coordinates/regions.
 
 ## Tools
 
@@ -91,11 +90,20 @@ throwing a raw exception.
 |---|---|---|
 | `screen_capture` | Captures a rectangular region and returns it as a PNG image content block (viewable inline by the client). | `x`, `y`, `width`, `height` |
 | `screen_get_color_at` | Reads the color of a single pixel. | `x`, `y` → `{ r, g, b, a }` |
+| `screen_get_size` | Returns the bounding box of the full virtual screen spanning all monitors. | — → `{ x, y, width, height }` |
+| `screen_list_displays` | Lists each connected monitor's bounds, primary flag, and DPI scale factor. | — → `[{ index, x, y, width, height, isPrimary, scaleFactor }]` |
 
 macOS requires the Screen Recording permission to be granted to the host process for both
 `screen_capture` and `screen_get_color_at`; the OS prompts on first use. macOS and Linux also
 require Accessibility / an active X11-or-XWayland session respectively for mouse and keyboard
 tools — see the Laz README's per-platform remarks for each method.
+
+`screen_get_size`/`screen_list_displays` are implemented outside of Laz (which has no such API —
+see Implementation notes below) via direct OS calls, so they have their own platform caveats:
+Linux requires `xrandr` on an X11/XWayland session (no Wayland-native support) and always reports
+`scaleFactor: 1.0` since `xrandr --query` doesn't expose per-monitor DPI. Windows' `scaleFactor`
+reflects real per-monitor DPI only once the process is DPI-aware; an unaware process reports
+`1.0` for every monitor.
 
 ## Configuration
 
@@ -117,3 +125,11 @@ tools — see the Laz README's per-platform remarks for each method.
   with `Enum.TryParse(ignoreCase: true)`, throwing `McpException` with a specific message on
   failure, rather than relying on the default JSON-schema enum-as-integer serialization — this
   keeps error messages legible to the model instead of a generic "invocation failed".
+- `screen_get_size`/`screen_list_displays` are the one deliberate exception to "thin wrapper over
+  Laz": since Laz exposes no screen-size or monitor-enumeration API, `ScreenInterop.cs` goes
+  straight to the OS instead — Win32 (`EnumDisplayMonitors`/`GetMonitorInfo`/`Shcore.dll!GetDpiForMonitor`)
+  on Windows, CoreGraphics (`CGGetActiveDisplayList`/`CGDisplayBounds`/`CGDisplayCopyDisplayMode`)
+  on macOS, and an `xrandr --query` shell-out on Linux. It deliberately never touches process DPI
+  awareness (e.g. `SetProcessDpiAwarenessContext`) since Laz's own native code already establishes
+  whatever awareness context its mouse coordinate mapping relies on, and overriding that
+  independently could silently break `mouse_jump_to`/`mouse_move_smooth` accuracy.

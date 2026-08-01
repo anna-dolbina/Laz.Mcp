@@ -36,6 +36,21 @@ internal sealed class ScreenTools(LazbotGate gate)
         var (r, g, b, a) = gate.Run(bot => bot.Screen.GetColorAt(new Point(x, y)));
         return new PixelColor(r, g, b, a);
     }
+
+    [McpServerTool(Name = "screen_get_size")]
+    [Description(
+        "Returns the bounding box of the full virtual screen spanning all monitors, in the same "
+        + "coordinate space used by mouse and screen_capture tools.")]
+    public ScreenSize GetSize() => ScreenInterop.GetVirtualScreenBounds();
+
+    [McpServerTool(Name = "screen_list_displays")]
+    [Description("Lists each connected monitor's bounds, primary flag, and DPI scale factor.")]
+    public IReadOnlyList<DisplayInfo> ListDisplays() => ScreenInterop.ListDisplays();
 }
 
 internal readonly record struct PixelColor(byte R, byte G, byte B, byte A);
+
+internal readonly record struct ScreenSize(int X, int Y, int Width, int Height);
+
+internal readonly record struct DisplayInfo(
+    int Index, int X, int Y, int Width, int Height, bool IsPrimary, double ScaleFactor);
