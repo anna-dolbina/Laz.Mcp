@@ -26,8 +26,15 @@ jobs:
       # dotnet pack drives the publish step for every RuntimeIdentifier itself
       # (needed here since the project is a self-contained, multi-RID dotnet tool) -
       # a separate `dotnet build` first isn't sufficient input for it.
+      # On a v* tag, the tag drives PackageVersion so tagging is the only release step.
       - name: Pack
-        run: dotnet pack --configuration Release --no-restore --output ./artifacts
+        shell: bash
+        run: |
+          VERSION_ARG=""
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION_ARG="-p:PackageVersion=${GITHUB_REF#refs/tags/v}"
+          fi
+          dotnet pack --configuration Release --no-restore --output ./artifacts $VERSION_ARG
 
       - name: Upload NuGet package
         uses: actions/upload-artifact@v4
@@ -35,3 +42,7 @@ jobs:
           name: nuget-package
           path: ./artifacts/*.nupkg
           if-no-files-found: error
+
+      - name: Push to NuGet.org
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
