@@ -12,6 +12,26 @@ capabilities beyond what Laz already does.
 session/user context you're comfortable handing that control to, and prefer running it in a
 disposable VM or sandboxed desktop session for anything you don't fully trust.
 
+## Why this one
+
+There are several other MCP servers for desktop automation (RobotJS-, PyAutoGUI-, AutoHotkey-, or
+native-backed). Most converge on the same base — click/move/drag, keypress/type, screenshot — with
+window management, clipboard access, or OCR bolted on as extras, and most that claim "cross-platform"
+are really Windows- or macOS-first with the other platforms added on top.
+
+Laz.Mcp stays narrow on purpose and differs on two things:
+
+- **Natural mouse movement.** `mouse_move_smooth` and `mouse_drag_and_drop` travel a linear or
+  bezier path under a choice of 9 easing curves, rather than a flat duration parameter or an
+  instant jump. Relevant if the target app (or a bot-detection layer) treats motion trajectory as
+  a signal.
+- **One implementation across Windows, Linux (X11/XWayland), and macOS**, from Laz's native input
+  handling on each platform, rather than a single-OS core with other platforms shimmed in.
+
+It doesn't do window management, clipboard access, or OCR — this stays a thin, reliable primitives
+layer over mouse, keyboard, and screen, meant to be a building block for whatever agent logic you
+put on top of it, not a full computer-use framework.
+
 ## Transport
 
 Stdio only. The server is a console app launched by an MCP client (Claude Desktop, Claude Code,
